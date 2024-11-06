@@ -82,9 +82,10 @@ df.categoryOptions.filtered <- lapply(unique_list, function(x) {
 
 #add code and displayNmae property  to the df.categoryOptions.filtered
 df.categoryOptions.filtered <- lapply(df.categoryOptions.filtered, function(x) {
-  x$code <- x$name
+  x$code <- ifelse(nchar(x$name) > 50, substr(x$name, 1, 40), x$name)
  # x$displayName <- x$name
-  x$shortName <- x$name
+ # x$shortName <- x$name
+  x$shortName <- ifelse(nchar(x$name) > 50, substr(x$name, 1, 40), x$name)
   return(x)
 })
 
@@ -95,8 +96,8 @@ df.categoryOptions.filtered <- lapply(df.categoryOptions.filtered, function(x) {
   return(x)
 })
 
-#Remove some objects 79 ,1,2,3,4
-df.categoryOptions.filtered <- df.categoryOptions.filtered[-c(6,7,8,9)]
+# Remove some objects 79 ,1,2,3,4
+# df.categoryOptions.filtered <- df.categoryOptions.filtered[-c(6,7,8,9)]
 
 # Send categoryOptions objects to DHIS2
 # loop all elemnts in the list df.categoryOptions.filtered and send data individually
