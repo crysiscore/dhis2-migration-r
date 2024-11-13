@@ -36,13 +36,13 @@ category.combo.ids <- lapply(dataElements, function(x) x$categoryCombo$id)
 categoryCombos <- lapply(category.combo.ids, function(x) getCategoryCombos(base.url, x))
 
 # Filter id, name, code ,dataDimensionType, publicAcess,externalAccess, publicAccess, categories
-df.categoryCombos.filtered <- lapply(categoryCombos, function(x) x[c('id', 'name', 'code', 'dataDimensionType', 'publicAccess', 'externalAccess', 'categories')])
+df.categoryCombos.filtered <- lapply(categoryCombos, function(x) x[c('id', 'name', 'code', 'dataDimensionType', 'externalAccess', 'categories')])
 
 
 #add sharing property  to the df.categoryCombos.filtered df
 df.categoryCombos.filtered <- lapply(df.categoryCombos.filtered, function(x) {
   x$sharing <- sharing
-  x$code <- ifelse(nchar(x$code) > 50, substr(x$code, 1, 40), x$code)
+  x$code <- ifelse(nchar(x$name) > 50, substr(x$name, 1, 40), x$name)
   x$publicAcess <- "r-------"
   return(x)
 })
@@ -60,7 +60,7 @@ category.combos.unique.list <- df.categoryCombos.filtered[unique_indices]
 
 vec.response.categoryCombos <- list()
 
-for (i in 42:length(category.combos.unique.list)) {
+for (i in 1:length(category.combos.unique.list)) {
   
   ou.response <- importCategorieCombos_v240(base.url.v240,category.combos.unique.list[[i]])
   

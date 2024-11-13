@@ -100,7 +100,7 @@ df.categoryOptions.filtered <- lapply(df.categoryOptions.filtered, function(x) {
 # df.categoryOptions.filtered <- df.categoryOptions.filtered[-c(6,7,8,9)]
 
 # Send categoryOptions objects to DHIS2
-# loop all elemnts in the list df.categoryOptions.filtered and send data individually
+# loop all elements in the list df.categoryOptions.filtered and send data individually
 # store response in vector
 
 vec.response.categoryOptions <- list()

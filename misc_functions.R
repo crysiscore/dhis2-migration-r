@@ -48,7 +48,6 @@ getDataEntryForm <- function(base.url, data.entry.form.id) {
   response
 }
 
-
 getDataSetElements <- function(base.url , dataset.id)  {
   url <-
     paste0(base.url,
@@ -78,6 +77,7 @@ getDataSet <- function(base.url , dataset.id)  {
   
   response
 }
+
 getIndicators <- function(base.url, indicator.id) {
   url <-
     paste0(base.url,
@@ -91,6 +91,21 @@ getIndicators <- function(base.url, indicator.id) {
   
   response
 }
+
+getAllIndicators_v240 <- function(base.url) {
+  url <-
+    paste0(base.url,
+           "api/indicators?paging=false")
+  
+  response <- request(url) %>%
+    req_auth_basic(username = dhis2.username.v240, password = dhis2.password.v240) %>%
+    req_retry(max_tries = 3) %>%
+    req_perform() %>%
+    resp_body_json()
+  
+  response$indicators
+}
+
 
 getIndicatorType <- function(base.url) {
   url <-
@@ -136,6 +151,21 @@ getDataElements <- function(base.url, data.element.id) {
   
 }
 
+getAllDataElements_v240 <- function(base.url) {
+  url <-
+    paste0(base.url,
+           "api/dataElements?paging=false")
+  
+  response <- request(url) %>%
+    req_auth_basic(username = dhis2.username.v240, password = dhis2.password.v240) %>%
+    req_retry(max_tries = 3) %>%
+    req_perform() %>%
+    resp_body_json()
+  
+  response$dataElements
+}
+
+
 getCategoryCombos <- function(base.url, category.combo.id) {
   url <-
     paste0(base.url,
@@ -150,6 +180,21 @@ getCategoryCombos <- function(base.url, category.combo.id) {
   response
 }
 
+getAllCategoryCombos_v240 <- function(base.url) {
+  url <-
+    paste0(base.url,
+           "api/categoryCombos?paging=false")
+  
+  response <- request(url) %>%
+    req_auth_basic(username = dhis2.username.v240, password = dhis2.password.v240) %>%
+    req_retry(max_tries = 3) %>%
+    req_perform() %>%
+    resp_body_json()
+  
+  response$categoryCombos
+}
+
+
 getCategories <- function(base.url, category.id) {
   url <-
     paste0(base.url,
@@ -163,6 +208,21 @@ getCategories <- function(base.url, category.id) {
   
   response
 }
+
+getAllCategories_v240 <- function(base.url) {
+  url <-
+    paste0(base.url,
+           "api/categories?paging=false")
+  
+  response <- request(url) %>%
+    req_auth_basic(username = dhis2.username.v240, password = dhis2.password.v240) %>%
+    req_retry(max_tries = 3) %>%
+    req_perform() %>%
+    resp_body_json()
+  
+  response$categories
+}
+
 
 getCategoryOptions <- function(base.url, category.option.id) {
   url <-
@@ -179,7 +239,21 @@ getCategoryOptions <- function(base.url, category.option.id) {
   
 }
 
+getAllCategoryOptions_v240 <- function(base.url) {
+  url <-
+    paste0(base.url,
+           "api/categoryOptions?paging=false")
   
+  response <- request(url) %>%
+    req_auth_basic(username = dhis2.username.v240, password = dhis2.password.v240) %>%
+    req_retry(max_tries = 3) %>%
+    req_perform() %>%
+    resp_body_json()
+  
+  response$categoryOptions
+}
+
+
 # Get all organisation units from DHIS2
 getOrganizationUnits <- function(base.url, location_id) {
   ## location pode ser distrito , provincia
@@ -202,6 +276,22 @@ getOrganizationUnits <- function(base.url, location_id) {
   
   response$organisationUnits
 
+}
+
+getAllOrganisationUnits_v240 <- function(base.url) {
+  url <-
+    paste0(
+      base.url,
+      "api/organisationUnits?paging=false&fields=id,level,name,shortName"
+    )
+  
+  response <- request(url) %>%
+    req_auth_basic(username = dhis2.username.v240, password = dhis2.password.v240) %>%
+    req_retry(max_tries = 3) %>%
+    req_perform() %>%
+    resp_body_json()
+  
+  response$organisationUnits
 }
 
 #import orgunits to DHIS2
