@@ -5,6 +5,7 @@ library(dplyr)
 source('misc_functions.R')
 source('credentials.R')
 load(file = "userGroupAccesses.RData")
+load(file='organisationUnits.RData')
 
 ############## Params
 base.url<-"https://mail.ccsaude.org.mz:5459/"
@@ -37,15 +38,22 @@ df_categories <- getAllCategories_v240(base.url.v240)
 # 4- Get all dataElements from DHIS2 v240
 df_dataElements <- getAllDataElements_v240(base.url.v240)
 
-# 5- Get all organisationUnits from DHIS2 v240
+# 5- Get all indicators from DHIS2 v240
+df_indicators <- getAllIndicators_v240(base.url.v240)
 
-df_organisationUnits <- getAllOrganisationUnits_v240(base.url.v240)
+# 5- Get all organisationUnits from DHIS2 v240
+#df_organisationUnits <- getAllOrganisationUnits_v240(base.url.v240)
+# Filter organisationUnits with level =4
+#df_organisationUnits <- df_organisationUnits[sapply(df_organisationUnits, function(x) x$level == 4)]
+# Filter  id property from the df_organisationUnits
+#df_organisationUnits <- lapply(df_organisationUnits, function(x) {
+#  x <- x[c("id")]
+#  return(x)
+#})
+
 
 # For each dataset create an environment to store the data
 for (id in 1:length(vec_datasets_ids) ) {
-  
-  # create and env for each dataset
-  assign(paste0("ENV_",labels(vec_datasets_ids[id])), new.env(), )
   
   # Get the dataset from dhis2
   ds <- getDataSet(base.url, vec_datasets_ids[id])
@@ -136,10 +144,11 @@ for (id in 1:length(vec_datasets_ids) ) {
   # Remove NULL elements from the list
   df_new_category_options <- df_new_category_options[sapply(df_new_category_options, function(x) !is.null(x))]
   
-  ## STAGE I - Send categoryOptions objects to DHIS2
+  ##  Send categoryOptions objects to DHIS2
   # loop all elements in the list df.categoryOptions.filtered and send data individually
 
   vec_response_categoryOptions <- list()
+  if(length(df_new_category_options)>0){
   for (i in 1:length(df_new_category_options)) {
     
     ou.response <- importCategoryOptions_v240(base.url.v240,df_new_category_options[[i]])
@@ -154,8 +163,9 @@ for (id in 1:length(vec_datasets_ids) ) {
     Sys.sleep(3)
     
   }
+  }
   
-  # Stage II - Send categories objects to DHIS2
+  ################################## Stage II - Send categories objects to DHIS2   ################################## 
   
   
   # Filter id, name, code ,dataDimensionType, publicAcess,externalAccess, publicAccess, categories
@@ -204,6 +214,7 @@ for (id in 1:length(vec_datasets_ids) ) {
   
   vec_response_categories <- list()
   
+  if(length(df_new_categories)>0){
   for (i in 1:length(df_new_categories)) {
     
     ou.response <- importCategories_v240(base.url.v240,df_new_categories[[i]])
@@ -218,9 +229,9 @@ for (id in 1:length(vec_datasets_ids) ) {
     Sys.sleep(3)
   }
   
-  
+  }
 
-  # Stage III - Send categoryOptionCombos objects to DHIS2
+  ###################################  Stage III - Send categoryOptionCombos objects to DHIS2  ################################### 
   
   # Filter id, name, code ,dataDimensionType, publicAcess,externalAccess, publicAccess, categories
   df_categoryCombos_filtered <- lapply(category_combos, function(x) x[c('id', 'name', 'dataDimensionType', 'externalAccess', 'categories')])
@@ -266,6 +277,7 @@ for (id in 1:length(vec_datasets_ids) ) {
   
   vec_response_categoryCombos <- list()
   
+  if(length(df_new_category_combos)>0){
   for (i in 1:length(df_new_category_combos)) {
     
     ou.response <- importCategorieCombos_v240(base.url.v240,df_new_category_combos[[i]])
@@ -279,9 +291,9 @@ for (id in 1:length(vec_datasets_ids) ) {
     }
     Sys.sleep(3)
   }
+  }
   
-  
-  # Stage IV - Send dataElements objects to DHIS2
+  ###################################  Stage IV - Send dataElements objects to DHIS2. ################################### 
   
   # Filter id, name, valueType ,aggregationType, domainType,externalAccess, zeroIsSignificant, optionSetValue from dataElements
   df_dataElements_filtered <- lapply(data_elements, function(x) {
@@ -344,6 +356,7 @@ for (id in 1:length(vec_datasets_ids) ) {
   
   vec_response_data_elements <- list()
   
+  if(length(df_new_data_elements)>0){
   for (i in 1:length(df_new_data_elements)) {
     
     ou.response <- importDataElements_v240(base.url.v240,df_new_data_elements[[i]])
@@ -358,14 +371,88 @@ for (id in 1:length(vec_datasets_ids) ) {
     Sys.sleep(3)
   }
   
-
-
-  # STAGE V - Send dataEntryForm objects to DHIS2  
+}
   
-  #Get data_entry_form ID
+  ###################################  STAGE V - Send Indicators objects to DHIS2. ################################### 
+  
+  # Retrieve data elements ids from the dataset datim.dataset.elements
+  indicators_ids <- lapply(ds$indicators, function(x) x$id)
+  
+  
+  # Get all data indicators from DHIS2
+  indicators <- lapply(indicators_ids, function(x) getIndicators(base.url, x))
+  
+  
+  # Filter id, name, valueType ,aggregationType, domainType,externalAccess, zeroIsSignificant, optionSetValue from dataElements
+  df_indicators_filtered <- lapply(indicators, function(x) {
+    x <- x[c("id","name","shortName","externalAccess","publicAccess","numeratorDescription","denominatorDescription","sharing",
+             "numerator","denominator","annualized","indicatorType")]
+    return(x)
+    
+  })
+  
+  
+  #add shortName property  to the df_indicators_filtered df
+  df_indicators_filtered <- lapply(df_indicators_filtered, function(x) {
+    x$shortName <- ifelse(nchar(x$shortName) > 50, substr(x$shortName, 1, 40), x$shortName)
+    x$sharing <- sharing
+    x$publicAccess <- "r-------"
+    return(x)
+  })
+  
+  
+  
+  indicators_ids_list <- sapply(df_indicators_filtered, function(x) x$id)
+  unique_indices <- match(unique(indicators_ids_list), indicators_ids_list)
+  indicators_unique_list <- df_indicators_filtered[unique_indices]
+  
+  # Extract all ids from the df_indicators
+  indicators_ids_list <- sapply(df_indicators, function(x) x$id)
+  
+  # check which indicators_unique_list does not exists in the df_indicators
+  
+  df_new_indicators <- lapply(indicators_unique_list, function(x) {
+    
+    if (x$id %in% indicators_ids_list) {
+      return(NULL)
+    } else {
+      return(x)
+    }
+    
+  })
+  
+  # Remove NULL elements from the list
+  df_new_indicators <- df_new_indicators[sapply(df_new_indicators, function(x) !is.null(x))]
+  
+  
+  # Send df_new_indicators objects to DHIS2
+  # loop all elements in the list df_new_indicators and send data individually
+
+  vec_response_indicators <- list()
+  if(length(df_new_indicators)>0){
+  for (i in 1:length(df_new_indicators)) {
+    
+    ou.response <- importIndicators_v240(base.url.v240,df_new_indicators[[i]])
+    
+    vec_response_indicators[[i]] <- ou.response
+    # if response status codeis  201   (created) print the response
+    if (ou.response$status_code == 201) {
+      print(paste0(i," ",df_new_indicators[[i]]$id ," " ,df_new_indicators[[i]]$name , " -  created sucessfully"))
+    } else {
+      print(paste0(i," ",df_new_indicators[[i]]$id  ," " ,df_new_indicators[[i]]$name ," -  failed to create"))
+    }
+    Sys.sleep(3)
+    
+  }
+  }
+  
+
+  ####################################  STAGE VI - Send dataEntryForm objects to DHIS2  ################################### 
+  
+  # Get data_entry_form ID
   data_entry_form_id <- ds$dataEntryForm$id
   
-  #Get dataEntryForm
+  # Get dataEntryForm
   
   data_entry_form <- getDataEntryForm(base.url, data_entry_form_id)
   
@@ -386,7 +473,6 @@ for (id in 1:length(vec_datasets_ids) ) {
       print( paste0(df_data_entry_form_filtered$name, " dataset was not imported"))
     }
   
-# STAGE VI - Send dataSet objects to DHIS2
   
   # Replace the categoryCombo id property = "nSPCuYWOkrg" with  id  "bjDvmb4bfuf" in the datim.dataset
   if(ds$categoryCombo$id == "nSPCuYWOkrg"){
@@ -397,17 +483,17 @@ for (id in 1:length(vec_datasets_ids) ) {
   
   
   # Filter id,name,expiryDays,openFuturePeriods,periodType,openPeriodsAfterCoEndDate,
-  #publicAccess,dataSetElements, categoryCombo,indicators,organisationUnits from the datim.dataset
+  #publicAccess,dataSetElements, categoryCombo,indicators from the datim.dataset
   df_dataset_filtered <- ds[c("id","name","expiryDays","openFuturePeriods","periodType","openPeriodsAfterCoEndDate",
-                                         "publicAccess","dataSetElements", "categoryCombo","indicators","dataEntryForm","organisationUnits")]
+                                         "publicAccess","dataSetElements", "categoryCombo","indicators","dataEntryForm")]
   
   
   
-  #Modify PublicAcess and Sharing Properties  in the df_dataset_filtered df
+  #Modify PublicAccess and Sharing Properties  in the df_dataset_filtered df
   df_dataset_filtered$sharing <- sharing
   df_dataset_filtered$publicAccess <- "r-------"
   df_dataset_filtered$shortName <- ifelse(nchar(df_dataset_filtered$name) > 50, substr(df_dataset_filtered$name, 1, 40), df_dataset_filtered$name)
-  
+  df_dataset_filtered$organisationUnits <- organisationUnits
   
   # Remove dataSet Property from the dataSetElements list
   df_dataset_filtered$dataSetElements <- lapply(df_dataset_filtered$dataSetElements, function(x) {
